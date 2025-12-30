@@ -371,6 +371,25 @@ const UnidadesSlide = () => (
         </div>
       ))}
     </div>
+    
+    {/* CTA Section */}
+    <div className="mt-6 p-4 bg-gradient-to-r from-primary/20 to-primary/10 rounded-xl border border-primary/30 text-center animate-fade-in" style={{ animationDelay: "400ms" }}>
+      <div className="flex items-center justify-center gap-2 mb-2">
+        <Star className="w-5 h-5 text-primary" />
+        <span className="text-lg font-bold text-foreground">Pronto para transformar seu negócio?</span>
+        <Star className="w-5 h-5 text-primary" />
+      </div>
+      <p className="text-sm text-muted-foreground mb-4">
+        Comece agora mesmo gratuitamente e veja resultados em poucos dias!
+      </p>
+      <a
+        href="/auth"
+        className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-full font-semibold text-sm hover:bg-primary/90 transition-all hover:scale-105 shadow-lg shadow-primary/30"
+      >
+        <CheckCircle className="w-4 h-4" />
+        Começar Teste Grátis
+      </a>
+    </div>
   </div>
 );
 
