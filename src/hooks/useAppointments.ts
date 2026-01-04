@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCurrentUnit } from "@/contexts/UnitContext";
@@ -57,6 +58,32 @@ export interface QuickServiceFormData {
 export function useAppointments(startDate?: Date, endDate?: Date, barberId?: string | null) {
   const { currentUnitId, currentCompanyId } = useCurrentUnit();
   const queryClient = useQueryClient();
+
+  // Realtime subscription para atualizar automaticamente quando agendamentos são criados/alterados externamente
+  useEffect(() => {
+    if (!currentUnitId) return;
+
+    const channel = supabase
+      .channel('appointments-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments',
+          filter: `unit_id=eq.${currentUnitId}`,
+        },
+        (payload) => {
+          console.log('Realtime appointment change:', payload);
+          queryClient.invalidateQueries({ queryKey: ['appointments'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUnitId, queryClient]);
 
   const query = useQuery({
     queryKey: ["appointments", currentUnitId, startDate?.toISOString(), endDate?.toISOString(), barberId],
