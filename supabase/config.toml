@@ -20,3 +20,6 @@ verify_jwt = false
 
 [functions.invite-barber]
 verify_jwt = true
+
+[functions.link-barber-account]
+verify_jwt = false

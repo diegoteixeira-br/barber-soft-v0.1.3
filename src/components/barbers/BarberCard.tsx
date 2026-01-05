@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Barber } from "@/hooks/useBarbers";
-import { Pencil, Trash2, Phone, Percent, Building2, Mail, CheckCircle2, Clock } from "lucide-react";
+import { Pencil, Trash2, Phone, Percent, Building2, Mail, CheckCircle2, Clock, Link2, Copy, Loader2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,16 +22,20 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
 
 interface BarberCardProps {
   barber: Barber;
   onEdit: (barber: Barber) => void;
   onDelete: (id: string) => void;
   onToggleActive: (id: string, is_active: boolean) => void;
+  onGenerateInvite?: (id: string) => Promise<string | null>;
   showUnit?: boolean;
 }
 
-export function BarberCard({ barber, onEdit, onDelete, onToggleActive, showUnit = false }: BarberCardProps) {
+export function BarberCard({ barber, onEdit, onDelete, onToggleActive, onGenerateInvite, showUnit = false }: BarberCardProps) {
+  const { toast } = useToast();
+  const [isGeneratingLink, setIsGeneratingLink] = useState(false);
   const initials = barber.name
     .split(" ")
     .map((n) => n[0])
@@ -112,6 +117,48 @@ export function BarberCard({ barber, onEdit, onDelete, onToggleActive, showUnit 
               </span>
               <span className="text-sm text-muted-foreground">comissão</span>
             </div>
+
+            {/* Invite link button - only show if no user_id (not yet registered) */}
+            {!hasAccount && onGenerateInvite && (
+              <div className="mt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  disabled={isGeneratingLink}
+                  onClick={async () => {
+                    setIsGeneratingLink(true);
+                    try {
+                      // Use existing token or generate new one
+                      let token = barber.invite_token;
+                      if (!token) {
+                        token = await onGenerateInvite(barber.id);
+                      }
+                      
+                      if (token) {
+                        const inviteUrl = `${window.location.origin}/convite/${token}`;
+                        await navigator.clipboard.writeText(inviteUrl);
+                        toast({
+                          title: "Link copiado!",
+                          description: "Envie o link para o profissional via WhatsApp ou email.",
+                        });
+                      }
+                    } finally {
+                      setIsGeneratingLink(false);
+                    }
+                  }}
+                >
+                  {isGeneratingLink ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : barber.invite_token ? (
+                    <Copy className="h-3 w-3" />
+                  ) : (
+                    <Link2 className="h-3 w-3" />
+                  )}
+                  {barber.invite_token ? "Copiar Link" : "Gerar Link de Convite"}
+                </Button>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-2">

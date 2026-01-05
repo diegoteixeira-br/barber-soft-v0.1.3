@@ -16,6 +16,7 @@ export interface Barber {
   is_active: boolean;
   created_at: string;
   unit_name?: string;
+  invite_token?: string | null;
 }
 
 export type BarberFormData = Omit<Barber, "id" | "created_at" | "company_id" | "unit_name"> & {
@@ -213,6 +214,29 @@ export function useBarbers(unitId: string | null | undefined) {
     },
   });
 
+  const generateInviteToken = useMutation({
+    mutationFn: async (id: string) => {
+      // Generate a new UUID token
+      const token = crypto.randomUUID();
+      
+      const { data, error } = await supabase
+        .from("barbers")
+        .update({ invite_token: token })
+        .eq("id", id)
+        .select("invite_token")
+        .single();
+
+      if (error) throw error;
+      return data.invite_token;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["barbers"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erro ao gerar link", description: error.message, variant: "destructive" });
+    },
+  });
+
   return { 
     barbers, 
     isLoading, 
@@ -220,6 +244,7 @@ export function useBarbers(unitId: string | null | undefined) {
     createBarber, 
     updateBarber, 
     deleteBarber,
-    toggleActive
+    toggleActive,
+    generateInviteToken
   };
 }

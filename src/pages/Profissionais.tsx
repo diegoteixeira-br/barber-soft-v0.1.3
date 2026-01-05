@@ -17,7 +17,7 @@ export default function Profissionais() {
   // Determine the unit ID to use for fetching barbers
   const effectiveUnitId = unitFilter === "all" ? null : (unitFilter === "current" ? currentUnitId : unitFilter);
   
-  const { barbers, isLoading, createBarber, updateBarber, deleteBarber, toggleActive } = useBarbers(effectiveUnitId);
+  const { barbers, isLoading, createBarber, updateBarber, deleteBarber, toggleActive, generateInviteToken } = useBarbers(effectiveUnitId);
   
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingBarber, setEditingBarber] = useState<Barber | null>(null);
@@ -50,6 +50,15 @@ export default function Profissionais() {
 
   const handleToggleActive = (id: string, is_active: boolean) => {
     toggleActive.mutate({ id, is_active });
+  };
+
+  const handleGenerateInvite = async (id: string): Promise<string | null> => {
+    try {
+      const token = await generateInviteToken.mutateAsync(id);
+      return token || null;
+    } catch {
+      return null;
+    }
   };
 
   const showUnitBadge = unitFilter === "all" && units.length > 1;
@@ -126,6 +135,7 @@ export default function Profissionais() {
                 onEdit={handleOpenModal}
                 onDelete={handleDelete}
                 onToggleActive={handleToggleActive}
+                onGenerateInvite={handleGenerateInvite}
                 showUnit={showUnitBadge}
               />
             ))}

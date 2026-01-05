@@ -10,6 +10,7 @@ import LandingPage from "./pages/LandingPage";
 import Auth from "./pages/Auth";
 import BarberAuth from "./pages/BarberAuth";
 import BarberDashboard from "./pages/BarberDashboard";
+import BarberInvite from "./pages/BarberInvite";
 import Dashboard from "./pages/Dashboard";
 import Agenda from "./pages/Agenda";
 import Clientes from "./pages/Clientes";
@@ -71,6 +72,7 @@ const App = () => (
             {/* Barber Routes (separate auth flow) */}
             <Route path="/auth/barber" element={<BarberAuth />} />
             <Route path="/barbeiro" element={<BarberDashboard />} />
+            <Route path="/convite/:token" element={<BarberInvite />} />
             
             {/* Institutional Pages */}
             <Route path="/api" element={<API />} />
