@@ -61,17 +61,37 @@ export function CalendarWeekView({
   // Check if showing all barbers (use ultra compact mode)
   const showAllBarbers = selectedBarberId === null && barbers.length > 0;
 
-  // Parse opening and closing hours
-  const openingHour = openingTime ? parseInt(openingTime.split(":")[0], 10) : 7;
-  const closingHour = closingTime ? parseInt(closingTime.split(":")[0], 10) : 21;
+  // Parse fallback opening and closing hours
+  const fallbackOpeningHour = openingTime ? parseInt(openingTime.split(":")[0], 10) : 7;
+  const fallbackClosingHour = closingTime ? parseInt(closingTime.split(":")[0], 10) : 21;
+
+  // Calculate min/max hours across all days of the week for display
+  const { minHour, maxHour } = useMemo(() => {
+    let min = fallbackOpeningHour;
+    let max = fallbackClosingHour;
+    
+    if (getOpeningHours) {
+      days.forEach(day => {
+        const hours = getOpeningHours(day);
+        if (hours) {
+          const dayOpen = parseInt(hours.opening.split(":")[0], 10);
+          const dayClose = parseInt(hours.closing.split(":")[0], 10);
+          min = Math.min(min, dayOpen);
+          max = Math.max(max, dayClose);
+        }
+      });
+    }
+    
+    return { minHour: min, maxHour: max };
+  }, [days, getOpeningHours, fallbackOpeningHour, fallbackClosingHour]);
 
   // Generate hours array based on business hours in compact mode
   const HOURS = useMemo(() => {
     if (isCompactMode) {
-      return Array.from({ length: closingHour - openingHour }, (_, i) => i + openingHour);
+      return Array.from({ length: maxHour - minHour }, (_, i) => i + minHour);
     }
     return Array.from({ length: 14 }, (_, i) => i + 7);
-  }, [isCompactMode, openingHour, closingHour]);
+  }, [isCompactMode, minHour, maxHour]);
 
   // Calculate dynamic height for compact mode
   const [containerHeight, setContainerHeight] = useState(0);
@@ -136,8 +156,18 @@ export function CalendarWeekView({
   const showTimeIndicator = currentHour >= firstHour && currentHour < lastHour + 1;
   const timeIndicatorPosition = (currentHour - firstHour) * hourHeight + (currentMinute / 60) * hourHeight;
 
-  const isWithinBusinessHours = (hour: number) => {
-    return hour >= openingHour && hour < closingHour;
+  // Check if a specific hour is within business hours for a specific day
+  const isWithinBusinessHoursForDay = (day: Date, hour: number) => {
+    if (getOpeningHours) {
+      const hours = getOpeningHours(day);
+      if (hours) {
+        const dayOpen = parseInt(hours.opening.split(":")[0], 10);
+        const dayClose = parseInt(hours.closing.split(":")[0], 10);
+        return hour >= dayOpen && hour < dayClose;
+      }
+    }
+    // Fallback to default hours
+    return hour >= fallbackOpeningHour && hour < fallbackClosingHour;
   };
 
   return (
@@ -193,9 +223,7 @@ export function CalendarWeekView({
               {HOURS.map(hour => (
                 <div
                   key={hour}
-                  className={`border-b border-border p-1 text-xs text-muted-foreground text-right pr-2 flex items-start justify-end ${
-                    isWithinBusinessHours(hour) ? "bg-blue-100/40 dark:bg-blue-900/20" : ""
-                  }`}
+                  className="border-b border-border p-1 text-xs text-muted-foreground text-right pr-2 flex items-start justify-end"
                   style={{ height: DEFAULT_HOUR_HEIGHT }}
                 >
                   {String(hour).padStart(2, "0")}:00
@@ -236,7 +264,7 @@ export function CalendarWeekView({
                   {HOURS.map(hour => {
                     const slotAppointments = appointmentsByDayAndHour[dayKey]?.[hour] || [];
                     const slotDate = setMinutes(setHours(day, hour), 0);
-                    const withinHours = isWithinBusinessHours(hour);
+                    const withinHours = isWithinBusinessHoursForDay(day, hour);
 
                     return (
                       <div

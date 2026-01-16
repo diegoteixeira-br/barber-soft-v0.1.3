@@ -41,6 +41,7 @@ export function CalendarDayView({
   timezone,
   isCompactMode = false,
   isOpenOnDate,
+  getOpeningHours,
   isHoliday,
 }: CalendarDayViewProps) {
   const activeBarbers = useMemo(
@@ -53,8 +54,14 @@ export function CalendarDayView({
   const isClosed = isOpenOnDate ? !isOpenOnDate(currentDate) : false;
   const holiday = isHoliday ? isHoliday(currentDate) : undefined;
 
-  const openingHour = openingTime ? parseInt(openingTime.split(":")[0], 10) : 7;
-  const closingHour = closingTime ? parseInt(closingTime.split(":")[0], 10) : 21;
+  // Get specific hours for this day, or use fallback
+  const dayHours = getOpeningHours ? getOpeningHours(currentDate) : null;
+  const openingHour = dayHours 
+    ? parseInt(dayHours.opening.split(":")[0], 10) 
+    : (openingTime ? parseInt(openingTime.split(":")[0], 10) : 7);
+  const closingHour = dayHours 
+    ? parseInt(dayHours.closing.split(":")[0], 10) 
+    : (closingTime ? parseInt(closingTime.split(":")[0], 10) : 21);
 
   const HOURS = useMemo(() => {
     if (isCompactMode) {
